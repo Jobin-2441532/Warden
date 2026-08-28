@@ -1,0 +1,220 @@
+// @ts-nocheck
+"use client";
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/Button";
+import { ArrowRight, CheckCircle2, ShieldAlert, Database, Cpu, Activity, ShieldCheck } from "lucide-react";
+
+export default function Home() {
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2 }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      
+      {/* 1. HERO SECTION */}
+      <section className="relative pt-32 pb-20 px-6 lg:pt-48 lg:pb-32 max-w-7xl mx-auto flex flex-col items-center text-center">
+        <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="max-w-4xl z-10">
+          <h1 className="text-5xl md:text-7xl font-serif leading-tight tracking-tight mb-8">
+            Make your store sellable to <span className="italic opacity-90">AI buyers.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-12">
+            Warden transforms your messy product data into machine-readable catalogs, gates autonomous spending, and logs every AI transaction in an immutable audit trail.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button asChild size="lg" className="h-14 px-8 text-sm bg-accent text-foreground hover:bg-accent/90">
+              <Link href="/onboarding">Get your readiness score</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="h-14 px-8 text-sm">
+              <Link href="/agent">See the Agent live</Link>
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Abstract graphic echoing motion blur */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-accent/20 to-foreground/5 blur-3xl rounded-full opacity-50 -z-10 pointer-events-none" />
+      </section>
+
+      {/* 2. PROBLEM / WHY NOW */}
+      <section className="py-24 bg-background-alt border-y border-muted/10">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div 
+            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-3 gap-12"
+          >
+            <motion.div variants={fadeInUp} className="space-y-4">
+              <div className="text-4xl font-serif text-accent">40%</div>
+              <h3 className="text-sm uppercase tracking-wide font-bold">Of B2B Transactions</h3>
+              <p className="text-muted text-sm leading-relaxed">Projected to be initiated by autonomous agents rather than humans by 2028. Is your infrastructure ready?</p>
+            </motion.div>
+            <motion.div variants={fadeInUp} className="space-y-4">
+              <div className="text-4xl font-serif text-accent">100ms</div>
+              <h3 className="text-sm uppercase tracking-wide font-bold">Checkout Speeds</h3>
+              <p className="text-muted text-sm leading-relaxed">Agents don't browse visual UIs. They need structured JSON, exact taxonomies, and instant API validations.</p>
+            </motion.div>
+            <motion.div variants={fadeInUp} className="space-y-4">
+              <div className="text-4xl font-serif text-accent">Zero</div>
+              <h3 className="text-sm uppercase tracking-wide font-bold">Margin for Error</h3>
+              <p className="text-muted text-sm leading-relaxed">When code spends money autonomously, trust requires strict governance, hard limits, and absolute explainability.</p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 3. HOW IT WORKS */}
+      <section className="py-32 max-w-7xl mx-auto px-6">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
+          <h2 className="text-4xl font-serif mb-4">The Infrastructure for Agentic Commerce</h2>
+          <p className="text-muted">Four steps to bridge your storefront to the autonomous economy.</p>
+        </motion.div>
+
+        <motion.div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
+          className="grid grid-cols-1 md:grid-cols-4 gap-8 relative"
+        >
+          {/* Connecting line for desktop */}
+          <div className="hidden md:block absolute top-12 left-1/8 right-1/8 h-px bg-muted/20 w-3/4 mx-auto -z-10" />
+
+          <motion.div variants={fadeInUp} className="flex flex-col items-center text-center space-y-6 bg-background-alt p-8 rounded-2xl border border-muted/10">
+            <div className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center">
+              <Database size={24} />
+            </div>
+            <h3 className="text-sm uppercase tracking-wide font-bold">1. Ingest & Structure</h3>
+            <p className="text-sm text-muted">Upload messy CSVs. Our engine normalizes it into agent-ready JSON schemas.</p>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="flex flex-col items-center text-center space-y-6 bg-background-alt p-8 rounded-2xl border border-muted/10">
+            <div className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center">
+              <Activity size={24} />
+            </div>
+            <h3 className="text-sm uppercase tracking-wide font-bold">2. Readiness Score</h3>
+            <p className="text-sm text-muted">Calculate exactly how readable and safe your store is for autonomous buyers.</p>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="flex flex-col items-center text-center space-y-6 bg-background-alt p-8 rounded-2xl border border-muted/10">
+            <div className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center">
+              <ShieldCheck size={24} />
+            </div>
+            <h3 className="text-sm uppercase tracking-wide font-bold">3. Set Mandates</h3>
+            <p className="text-sm text-muted">Define strict spending rules, velocity limits, and category constraints.</p>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="flex flex-col items-center text-center space-y-6 bg-background-alt p-8 rounded-2xl border border-muted/10">
+            <div className="w-16 h-16 rounded-full bg-accent text-foreground flex items-center justify-center">
+              <Cpu size={24} />
+            </div>
+            <h3 className="text-sm uppercase tracking-wide font-bold">4. Agent Execution</h3>
+            <p className="text-sm text-muted">External agents safely browse, query, and purchase within your exact boundaries.</p>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* 5. CONTROL TOWER SPOTLIGHT */}
+      <section className="py-32 bg-foreground text-background">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="space-y-6">
+            <h2 className="text-4xl font-serif">Trust through absolute explainability.</h2>
+            <p className="text-background/70 text-lg">
+              You can't let algorithms spend money if you can't prove why they did it. 
+              The Control Tower logs every API request, providing a real-time, plain-English 
+              reasoning trace for why an action was approved or denied by your mandates.
+            </p>
+            <ul className="space-y-4 pt-4">
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="text-accent shrink-0 mt-0.5" size={20} />
+                <span className="text-sm text-background/80">Real-time immutable audit trail</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="text-accent shrink-0 mt-0.5" size={20} />
+                <span className="text-sm text-background/80">Plain-English reasoning traces</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="text-accent shrink-0 mt-0.5" size={20} />
+                <span className="text-sm text-background/80">Per-order and velocity gatekeeping</span>
+              </li>
+            </ul>
+          </motion.div>
+
+          {/* Visual Mock of Control Tower */}
+          <motion.div 
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}
+            className="bg-[#1e2a35] rounded-2xl p-6 border border-white/10 shadow-2xl relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent to-accent/20" />
+            <div className="space-y-4">
+              {/* Approved Row */}
+              <div className="bg-[#243340] rounded-xl p-4 border-l-4 border-l-accent flex flex-col gap-4">
+                <div className="flex justify-between items-center text-sm">
+                  <div className="font-mono text-white/50">14:32:01</div>
+                  <div className="font-mono">$1,200.00</div>
+                  <div className="px-2 py-1 rounded bg-accent/20 text-accent text-xs font-bold uppercase tracking-wide">Approved</div>
+                </div>
+                <div className="flex gap-2 items-start bg-[#1e2a35] p-3 rounded text-xs font-mono text-white/70">
+                  <CheckCircle2 size={14} className="text-accent mt-0.5" />
+                  <span>Approved: Transaction meets all mandate constraints. Limit remaining: $3,800.</span>
+                </div>
+              </div>
+              
+              {/* Denied Row */}
+              <div className="bg-[#243340] rounded-xl p-4 border-l-4 border-l-danger flex flex-col gap-4">
+                <div className="flex justify-between items-center text-sm">
+                  <div className="font-mono text-white/50">14:28:44</div>
+                  <div className="font-mono">$5,000.00</div>
+                  <div className="px-2 py-1 rounded bg-danger/20 text-danger text-xs font-bold uppercase tracking-wide">Denied</div>
+                </div>
+                <div className="flex gap-2 items-start bg-[#1e2a35] p-3 rounded text-xs font-mono text-white/70">
+                  <ShieldAlert size={14} className="text-danger mt-0.5" />
+                  <span>Denied: Transaction amount ($5,000) exceeds the per-order limit of $2,000.</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 4. LIVE DEMO CALLOUT */}
+      <section className="py-32 bg-background relative overflow-hidden border-b border-muted/10">
+        <div className="max-w-4xl mx-auto px-6 text-center z-10 relative">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
+            <h2 className="text-4xl font-serif mb-6">Experience the AI Buyer</h2>
+            <p className="text-muted text-lg mb-10 max-w-2xl mx-auto">
+              Interact with a live autonomous agent constrained by Warden's gate logic. Ask it to buy products, test the limits, and see how the system responds.
+            </p>
+            
+            <div className="relative group w-full max-w-3xl mx-auto aspect-video rounded-2xl overflow-hidden border border-muted/20 bg-background-alt shadow-2xl flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-foreground/5 to-transparent pointer-events-none" />
+              
+              <Button asChild size="lg" className="relative z-20 h-14 px-8 bg-foreground text-background hover:bg-foreground/90 group-hover:scale-105 transition-transform shadow-xl">
+                <Link href="/agent">Launch Interactive Demo <ArrowRight className="ml-2 w-4 h-4" /></Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 6. CTA FOOTER */}
+      <section className="py-24 px-6 text-center bg-background">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="max-w-2xl mx-auto space-y-8">
+          <h2 className="text-4xl font-serif">Ready to onboard?</h2>
+          <p className="text-muted">Start by generating your first AI Readiness Score.</p>
+          <Button asChild size="lg" className="h-14 px-12 bg-accent text-foreground hover:bg-accent/90 text-sm">
+            <Link href="/onboarding">Start Onboarding Sequence</Link>
+          </Button>
+        </motion.div>
+      </section>
+
+    </div>
+  );
+}

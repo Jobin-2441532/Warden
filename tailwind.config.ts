@@ -10,8 +10,16 @@ const config: Config = {
     extend: {
       colors: {
         background: "var(--background)",
+        "background-alt": "var(--background-alt)",
         foreground: "var(--foreground)",
+        accent: "var(--accent)",
+        danger: "var(--danger)",
+        muted: "var(--muted)",
       },
+      fontFamily: {
+        sans: ["var(--font-inter)", "sans-serif"],
+        serif: ["var(--font-fraunces)", "serif"],
+      }
     },
   },
   plugins: [],
