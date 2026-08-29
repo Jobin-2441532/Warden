@@ -5,8 +5,7 @@ import { useState, useEffect, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { createClient } from "@/lib/supabase/client";
-import { saveAgentTranscript } from "./actions";
+import { getDefaultMerchantAndCreateSession, saveAgentTranscript } from "./actions";
 import { useSearchParams } from "next/navigation";
 
 function AgentChatContent() {
@@ -17,20 +16,12 @@ function AgentChatContent() {
 
   useEffect(() => {
     const init = async () => {
-      const supabase = createClient();
-      let mId = merchantId;
-      if (!mId) {
-        const { data } = await supabase.from('merchants').select('id').limit(1).single();
-        if (data) {
-          setMerchantId(data.id);
-          mId = data.id;
-        }
-      }
-      
-      // Create session
-      if (mId && !sessionId) {
-        const { data: session } = await supabase.from('agent_sessions').insert([{ merchant_id: mId }]).select('id').single();
-        if (session) setSessionId(session.id);
+      if (merchantId && sessionId) return; // Already initialized
+
+      const data = await getDefaultMerchantAndCreateSession();
+      if (data) {
+        setMerchantId(data.merchantId);
+        setSessionId(data.sessionId);
       }
     };
     init();
