@@ -8,7 +8,8 @@
 
 DO $$ 
 DECLARE
-  demo_merchant_id UUID := gen_random_uuid();
+  -- IMPORTANT: Replace the string below with the User UID from your Supabase Authentication dashboard!
+  demo_merchant_id UUID := 'REPLACE_ME_WITH_COPIED_USER_UID';
   demo_mandate_id UUID := gen_random_uuid();
 BEGIN
 

@@ -1,20 +1,18 @@
-// @ts-nocheck
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
 import { saveAgentTranscript } from "./actions";
+import { useSearchParams } from "next/navigation";
 
-export default function CommerceAgentPage({
-  searchParams
-}: {
-  searchParams?: { m?: string }
-}) {
-  const [merchantId, setMerchantId] = useState<string | null>(searchParams?.m || null);
+function AgentChatContent() {
+  const searchParams = useSearchParams();
+  const m = searchParams.get('m');
+  const [merchantId, setMerchantId] = useState<string | null>(m || null);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,8 +41,7 @@ export default function CommerceAgentPage({
     body: {
       data: { merchantId, sessionId }
     },
-    onFinish: (msg: any) => {
-      // Save transcript after every completion
+    onFinish: () => {
       if (sessionId && messages.length > 0) {
         saveAgentTranscript(sessionId, messages);
       }
@@ -54,13 +51,11 @@ export default function CommerceAgentPage({
   if (!merchantId) return <div className="p-8 text-center">Loading Store...</div>;
 
   return (
-    <div className="min-h-screen bg-background-alt flex flex-col items-center p-4 py-12">
-      <div className="w-full max-w-2xl mb-4 text-center">
-        <h1 className="text-3xl font-serif text-foreground">Commerce Agent</h1>
-        <p className="text-muted">Chat to browse and buy instantly.</p>
-      </div>
-
-      <Card className="w-full max-w-2xl h-[700px] flex flex-col shadow-lg border-muted/20">
+    <div className="w-full max-w-2xl mb-4 text-center">
+      <h1 className="text-3xl font-serif text-foreground">Commerce Agent</h1>
+      <p className="text-muted">Chat to browse and buy instantly.</p>
+      
+      <Card className="w-full h-[700px] flex flex-col shadow-lg border-muted/20 text-left mt-8 mx-auto">
         <CardHeader className="border-b border-muted/10 bg-background flex flex-row items-center justify-between py-4">
           <CardTitle className="text-lg">Shopping Assistant</CardTitle>
           <Badge variant="approved" className="bg-accent text-foreground gap-1 items-center flex border border-accent/20">
@@ -72,7 +67,7 @@ export default function CommerceAgentPage({
         <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.length === 0 && (
             <div className="text-center text-muted text-sm mt-12">
-              Hi! I'm your AI assistant. Tell me what you're looking for today.
+              Hi! I am your AI assistant. Tell me what you are looking for today.
             </div>
           )}
           
@@ -87,7 +82,6 @@ export default function CommerceAgentPage({
               >
                 {m.content}
 
-                {/* Render Tool Invocations & Results Inline */}
                 {m.toolInvocations?.map((tool: any) => {
                   if (tool.toolName === 'purchase') {
                     if (tool.state === 'result') {
@@ -98,16 +92,16 @@ export default function CommerceAgentPage({
                             <CheckCircleIcon className="w-8 h-8 text-accent mx-auto mb-2" />
                             <h4 className="font-bold">Order Confirmed!</h4>
                             <p className="text-xs text-muted mb-2">Order ID: {res.orderId}</p>
-                            <p className="text-xs text-muted">Amount: ₹{res.amount}</p>
+                            <p className="text-xs text-muted">Amount: Rs {res.amount}</p>
                             <a href="/dashboard/control-tower" target="_blank" className="text-[10px] uppercase tracking-wide text-accent hover:underline mt-4 inline-block">
-                              View in Control Tower →
+                              View in Control Tower -{">"}
                             </a>
                           </div>
                         );
                       } else if (res.status === 'denied' || res.status === 'failed') {
                         return (
                           <div key={tool.toolCallId} className="mt-4 p-3 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-2">
-                            <span className="text-danger mt-0.5">⚠️</span>
+                            <span className="text-danger mt-0.5">X</span>
                             <div className="text-xs text-danger font-mono">
                               <strong>Gate System:</strong> {res.reason}
                             </div>
@@ -144,15 +138,25 @@ export default function CommerceAgentPage({
               value={input}
               onChange={handleInputChange}
               placeholder="Ask for a product..."
-              className="flex-1 p-3 rounded-full bg-background-alt border border-muted/20 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+              className="flex-1 p-3 rounded-full bg-background-alt border border-muted/20 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-foreground"
               disabled={isLoading}
             />
             <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !input.trim()}>
-              →
+              -{">"}
             </Button>
           </form>
         </CardFooter>
       </Card>
+    </div>
+  );
+}
+
+export default function CommerceAgentPage() {
+  return (
+    <div className="min-h-screen bg-background-alt flex flex-col items-center p-4 py-12">
+      <Suspense fallback={<div className="p-8 text-center">Loading Store...</div>}>
+        <AgentChatContent />
+      </Suspense>
     </div>
   );
 }
