@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { saveMandate, toggleMandateStatus } from "./actions";
+import { formatINR } from "@/lib/format";
 
 export function MandateManager({ 
   merchantId, 

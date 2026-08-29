@@ -55,7 +55,7 @@ export async function evaluateTransaction(
     .in("status", ["approved", "completed"])
     .gte("created_at", startOfDay.toISOString());
 
-  const dailyTotal = (todayTxs || []).reduce((sum, tx) => sum + tx.amount, 0);
+  const dailyTotal = (todayTxs || []).reduce((sum: number, tx: any) => sum + tx.amount, 0);
   const dailyCount = (todayTxs || []).length;
 
   // 4. Check daily amount limit
