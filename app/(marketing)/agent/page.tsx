@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -27,26 +27,17 @@ function AgentChatContent() {
     init();
   }, [merchantId, sessionId]);
 
-  const { messages, input, setInput, append, isLoading } = useChat({
+  const chatBody = useMemo(() => ({ data: { merchantId, sessionId } }), [merchantId, sessionId]);
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: "/api/chat",
-    body: {
-      data: { merchantId, sessionId }
-    },
+    body: chatBody,
     onFinish: () => {
       if (sessionId && messages.length > 0) {
         saveAgentTranscript(sessionId, messages);
       }
     }
   });
-
-  const [localInput, setLocalInput] = useState("");
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!localInput.trim()) return;
-    append({ role: 'user', content: localInput });
-    setLocalInput('');
-  };
 
   if (!merchantId) return <div className="p-8 text-center">Loading Store...</div>;
 
@@ -133,15 +124,15 @@ function AgentChatContent() {
         </CardContent>
 
         <CardFooter className="p-4 border-t border-muted/10 bg-background">
-          <form onSubmit={handleFormSubmit} className="flex w-full gap-2">
+          <form onSubmit={handleSubmit} className="flex w-full gap-2">
             <input
-              value={localInput}
-              onChange={(e) => setLocalInput(e.target.value)}
+              value={input || ''}
+              onChange={handleInputChange}
               placeholder="Ask for a product..."
               className="flex-1 p-3 rounded-full bg-background-alt border border-muted/20 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-foreground"
               disabled={isLoading}
             />
-            <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !localInput?.trim()}>
+            <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !input?.trim()}>
               -{">"}
             </Button>
           </form>
