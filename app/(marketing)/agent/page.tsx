@@ -28,8 +28,10 @@ function AgentChatContent() {
   }, [merchantId, sessionId]);
 
   const chatBody = useMemo(() => ({ data: { merchantId, sessionId } }), [merchantId, sessionId]);
+  
+  const [localInput, setLocalInput] = useState("");
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, sendMessage, status } = useChat({
     api: "/api/chat",
     body: chatBody,
     onFinish: () => {
@@ -38,6 +40,15 @@ function AgentChatContent() {
       }
     }
   });
+
+  const isLoading = status === "submitted" || status === "streaming";
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!localInput.trim() || !sendMessage) return;
+    sendMessage({ content: localInput, role: 'user' });
+    setLocalInput("");
+  };
 
   if (!merchantId) return <div className="p-8 text-center">Loading Store...</div>;
 
@@ -124,15 +135,15 @@ function AgentChatContent() {
         </CardContent>
 
         <CardFooter className="p-4 border-t border-muted/10 bg-background">
-          <form onSubmit={handleSubmit} className="flex w-full gap-2">
+          <form onSubmit={handleFormSubmit} className="flex w-full gap-2">
             <input
-              value={input || ''}
-              onChange={handleInputChange}
+              value={localInput}
+              onChange={(e) => setLocalInput(e.target.value)}
               placeholder="Ask for a product..."
               className="flex-1 p-3 rounded-full bg-background-alt border border-muted/20 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-foreground"
               disabled={isLoading}
             />
-            <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !input?.trim()}>
+            <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !localInput.trim()}>
               -{">"}
             </Button>
           </form>
