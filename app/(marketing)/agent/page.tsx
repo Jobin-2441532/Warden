@@ -46,7 +46,10 @@ function AgentChatContent() {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!localInput.trim() || !sendMessage) return;
-    sendMessage({ content: localInput, role: 'user' });
+    sendMessage(
+      { content: localInput, role: 'user' }, 
+      { body: chatBody }
+    );
     setLocalInput("");
   };
 

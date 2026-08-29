@@ -7,10 +7,8 @@ export default function Page() {
   return (
     <div>
       <input id="test-input" value={local} onChange={e => setLocal(e.target.value)} />
-      <button id="test-btn-1" onClick={() => chat.sendMessage({ content: local, role: 'user' })}>Send {`{ content }`}</button>
-      <button id="test-btn-2" onClick={() => chat.sendMessage({ messages: [{role: 'user', content: local}] })}>Send {`{ messages }`}</button>
-      <div id="status">{chat.status}</div>
-      <div id="messages">{JSON.stringify(chat.messages)}</div>
+      <button id="test-btn-3" onClick={() => chat.sendMessage({ content: local, role: 'user' }, { body: { data: { extra: 123 } } })}>Send with body options</button>
+      <button id="test-btn-4" onClick={() => chat.sendMessage({ content: local, role: 'user' }, { data: { extra: 123 } })}>Send with data options</button>
     </div>
   );
 }

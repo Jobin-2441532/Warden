@@ -12,7 +12,15 @@ const { chromium } = require('playwright');
   
   await page.goto('http://localhost:3000/test');
   await page.fill('#test-input', 'hello');
-  await page.click('#test-btn-1');
+  
+  console.log('-- clicking btn 3 --');
+  await page.click('#test-btn-3');
+  await page.waitForTimeout(500);
+  
+  await page.goto('http://localhost:3000/test');
+  await page.fill('#test-input', 'hello');
+  console.log('-- clicking btn 4 --');
+  await page.click('#test-btn-4');
   await page.waitForTimeout(500);
   
   await browser.close();
