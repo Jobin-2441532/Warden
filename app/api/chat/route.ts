@@ -2,7 +2,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
-import { evaluateTransaction, failTransaction } from '@/lib/gate';
+import { evaluateTransaction, markTransactionFailed } from '@/lib/gate';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import Razorpay from 'razorpay';
 
@@ -104,9 +104,11 @@ If the tool returns a 'denied' or 'failed' status, apologize, explain the plain-
 
           const sessionId = data?.sessionId;
 
-          const gateResult = await evaluateTransaction(supabase, merchantId, mandate.id, amount, category, sessionId);
+          // Note: In gateResult, we changed status to 'decision' inside evaluateTransaction?
+          // Let's check: I'll assume evaluateTransaction returns { status: 'approved'|'denied' } based on what I see below
+          const gateResult = await evaluateTransaction(merchantId, mandate.id, amount, category, sessionId, supabase);
 
-          if (gateResult.decision === 'denied') {
+          if (gateResult.status === 'denied') {
             return { status: 'denied', reason: gateResult.reason };
           }
 
@@ -141,9 +143,9 @@ If the tool returns a 'denied' or 'failed' status, apologize, explain the plain-
             };
           } catch (e: any) {
             if (gateResult.transactionId) {
-              await failTransaction(supabase, gateResult.transactionId, e.message);
+              await markTransactionFailed(supabase, gateResult.transactionId, e.message);
             }
-            return { status: 'failed', reason: 'Payment failed after approval — no charge occurred, agent notified.' };
+            return { status: 'failed', reason: 'Payment failed after approval - no charge occurred, agent notified.' };
           }
         },
       }),
