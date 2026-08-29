@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { formatINR } from "@/lib/format";
+import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export function ControlTower({ 
   merchantId, 
@@ -99,7 +100,7 @@ export function ControlTower({
         <Card className="bg-background-alt border-muted/20">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted">Approved Value</p>
-            <p className="text-2xl font-serif mt-1">${totalApprovedValue.toLocaleString()}</p>
+            <p className="text-2xl font-serif mt-1">{formatINR(totalApprovedValue)}</p>
           </CardContent>
         </Card>
       </div>
@@ -149,7 +150,7 @@ export function ControlTower({
                         {new Date(tx.created_at).toLocaleTimeString()}
                       </div>
                       <div className="w-24 font-mono font-medium">
-                        ${tx.amount}
+                        {formatINR(tx.amount)}
                       </div>
                       <div className="flex-1 text-sm">
                         {tx.category || "Uncategorized"}
@@ -166,15 +167,39 @@ export function ControlTower({
                   {isExpanded && (
                     <div className="bg-background-alt p-6 pl-14 border-t border-muted/10 text-sm">
                       <div className="flex items-start gap-3">
-                        {isApproved && <CheckCircle2 className="text-accent mt-0.5" size={18} />}
-                        {(isDenied || isFailed) && <AlertCircle className="text-danger mt-0.5" size={18} />}
+                        {isApproved && <ShieldCheck className="text-accent mt-0.5" size={20} />}
+                        {(isDenied || isFailed) && <AlertCircle className="text-danger mt-0.5" size={20} />}
                         
-                        <div className="space-y-1">
-                          <p className="font-semibold">Reasoning Trace:</p>
-                          <p className="text-muted leading-relaxed font-mono text-xs p-3 bg-background border border-muted/20 rounded-md">
-                            {tx.reason_text}
-                          </p>
-                          <div className="pt-2 text-xs text-muted flex gap-4">
+                        <div className="space-y-3 w-full max-w-2xl">
+                          <p className="font-semibold">{isApproved ? 'Gate Checks Passed:' : 'Reasoning Trace:'}</p>
+                          
+                          {isDenied && tx.failed_rule && (
+                            <div className="bg-danger/5 border border-danger/20 rounded-md p-3">
+                              <div className="text-xs uppercase tracking-wide text-danger font-semibold mb-1">Rule: {tx.failed_rule.replace(/_/g, ' ')}</div>
+                              <div className="font-mono text-sm mb-2 text-foreground">
+                                Limit: {tx.failed_rule.includes('velocity') ? tx.rule_value : formatINR(tx.rule_value || 0)} → 
+                                Attempted: {tx.failed_rule.includes('velocity') ? tx.attempted_value : formatINR(tx.attempted_value || 0)}
+                              </div>
+                              <div className="text-muted text-xs">{tx.reason_text}</div>
+                            </div>
+                          )}
+
+                          {(!isDenied || !tx.failed_rule) && (
+                            <p className="text-muted leading-relaxed font-mono text-xs p-3 bg-background border border-muted/20 rounded-md">
+                              {tx.reason_text}
+                            </p>
+                          )}
+
+                          {isApproved && (
+                            <div className="grid grid-cols-2 gap-2 text-xs text-muted">
+                              <div className="flex items-center gap-1"><CheckCircle2 size={12} className="text-accent"/> Amount within per-order limit</div>
+                              <div className="flex items-center gap-1"><CheckCircle2 size={12} className="text-accent"/> Category allowed</div>
+                              <div className="flex items-center gap-1"><CheckCircle2 size={12} className="text-accent"/> Daily aggregate total OK</div>
+                              <div className="flex items-center gap-1"><CheckCircle2 size={12} className="text-accent"/> Velocity constraints passed</div>
+                            </div>
+                          )}
+
+                          <div className="pt-2 text-xs text-muted flex gap-4 border-t border-muted/10 mt-4">
                             <span>Mandate ID: {tx.mandate_id || 'N/A'}</span>
                             <span>Transaction ID: {tx.id}</span>
                           </div>

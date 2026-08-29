@@ -158,12 +158,12 @@ export default function Home() {
               <div className="bg-[#243340] rounded-xl p-4 border-l-4 border-l-accent flex flex-col gap-4">
                 <div className="flex justify-between items-center text-sm">
                   <div className="font-mono text-white/50">14:32:01</div>
-                  <div className="font-mono">$1,200.00</div>
+                  <div className="font-mono">$1?1,20?2,00,000</div>
                   <div className="px-2 py-1 rounded bg-accent/20 text-accent text-xs font-bold uppercase tracking-wide">Approved</div>
                 </div>
                 <div className="flex gap-2 items-start bg-[#1e2a35] p-3 rounded text-xs font-mono text-white/70">
                   <CheckCircle2 size={14} className="text-accent mt-0.5" />
-                  <span>Approved: Transaction meets all mandate constraints. Limit remaining: $3,800.</span>
+                  <span>Approved: Transaction meets all mandate constraints. Limit remaining: $3?3,80?2,00,000.</span>
                 </div>
               </div>
               
@@ -171,12 +171,12 @@ export default function Home() {
               <div className="bg-[#243340] rounded-xl p-4 border-l-4 border-l-danger flex flex-col gap-4">
                 <div className="flex justify-between items-center text-sm">
                   <div className="font-mono text-white/50">14:28:44</div>
-                  <div className="font-mono">$5,000.00</div>
+                  <div className="font-mono">$5?5,00?2,00,000</div>
                   <div className="px-2 py-1 rounded bg-danger/20 text-danger text-xs font-bold uppercase tracking-wide">Denied</div>
                 </div>
                 <div className="flex gap-2 items-start bg-[#1e2a35] p-3 rounded text-xs font-mono text-white/70">
                   <ShieldAlert size={14} className="text-danger mt-0.5" />
-                  <span>Denied: Transaction amount ($5,000) exceeds the per-order limit of $2,000.</span>
+                  <span>Denied: Transaction amount ($5?2,00,000) exceeds the per-order limit of $2?2,00,000.</span>
                 </div>
               </div>
             </div>

@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { processCatalog } from "./actions";
+import { formatINR } from "@/lib/format";
 
 export function CatalogManager({ initialCatalog, merchantId }: { initialCatalog: any, merchantId: string }) {
   const [catalog, setCatalog] = useState(initialCatalog);
-  const [rawPreview, setRawPreview] = useState<any[] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const structuredData = catalog?.structured_json || [];
+  const rawContent = catalog?.raw_content || null;
   const needsReviewCount = structuredData.filter((i: any) => i._needsReview).length;
   const cleanCount = structuredData.length - needsReviewCount;
 
@@ -20,35 +21,35 @@ export function CatalogManager({ initialCatalog, merchantId }: { initialCatalog:
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type === "application/json" || file.name.endsWith(".json")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      
+      if (file.type === "application/json" || file.name.endsWith(".json")) {
         try {
-          const json = JSON.parse(event.target?.result as string);
+          const json = JSON.parse(text);
           const data = Array.isArray(json) ? json : [json];
-          setRawPreview(data);
-          handleProcess(data, "JSON");
+          handleProcess(data, text, "JSON");
         } catch (err) {
           alert("Invalid JSON file");
         }
-      };
-      reader.readAsText(file);
-    } else {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          setRawPreview(results.data);
-          handleProcess(results.data, "CSV");
-        }
-      });
-    }
+      } else {
+        Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            handleProcess(results.data, text, "CSV");
+          }
+        });
+      }
+    };
+    reader.readAsText(file);
   };
 
-  const handleProcess = async (data: any[], sourceType: string) => {
+  const handleProcess = async (data: any[], rawContentString: string, sourceType: string) => {
     setIsProcessing(true);
     try {
-      const result = await processCatalog(merchantId, data, sourceType);
+      const result = await processCatalog(merchantId, data, rawContentString, sourceType);
       if (result.success) {
         setCatalog(result.data);
       }
@@ -85,7 +86,7 @@ export function CatalogManager({ initialCatalog, merchantId }: { initialCatalog:
               </div>
             </label>
             {catalog && (
-              <Button variant="outline" onClick={() => handleProcess(structuredData, catalog.raw_source_type)} disabled={isProcessing}>
+              <Button variant="outline" onClick={() => handleProcess(structuredData, rawContent || JSON.stringify(structuredData, null, 2), catalog.raw_source_type)} disabled={isProcessing}>
                 Re-sync Catalog
               </Button>
             )}
@@ -94,7 +95,7 @@ export function CatalogManager({ initialCatalog, merchantId }: { initialCatalog:
       </Card>
 
       {/* Before / After Split View */}
-      {(rawPreview || structuredData.length > 0) && (
+      {(rawContent || structuredData.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Left: Raw Data */}
@@ -104,8 +105,8 @@ export function CatalogManager({ initialCatalog, merchantId }: { initialCatalog:
             </CardHeader>
             <CardContent>
               <div className="h-[600px] overflow-auto bg-background p-4 rounded border border-muted/20 font-mono text-xs whitespace-pre">
-                {rawPreview 
-                  ? JSON.stringify(rawPreview, null, 2)
+                {rawContent 
+                  ? rawContent
                   : "Upload a file to see raw preview."}
               </div>
             </CardContent>
@@ -130,7 +131,7 @@ export function CatalogManager({ initialCatalog, merchantId }: { initialCatalog:
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div><span className="text-muted">Price:</span> {item.price_inr} {item.currency}</div>
+                        <div><span className="text-muted">Price:</span> {formatINR(item.price_inr)}</div>
                         <div><span className="text-muted">Category:</span> {item.category}</div>
                         <div><span className="text-muted">Stock:</span> {item.in_stock ? 'Yes' : 'No'} ({item.stock_quantity})</div>
                         <div><span className="text-muted">Returns:</span> {item.policy?.returns}</div>

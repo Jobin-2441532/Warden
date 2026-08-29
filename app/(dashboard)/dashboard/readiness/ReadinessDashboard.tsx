@@ -37,6 +37,12 @@ export function ReadinessDashboard({
     score: s.score
   }));
 
+  const getScoreLabel = (score: number) => {
+    if (score >= 90) return "Excellent — fully agent-ready";
+    if (score >= 70) return "Good — minor gaps remain";
+    return "Needs work before AI buyers can transact reliably";
+  };
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header and Recalculate */}
@@ -50,7 +56,7 @@ export function ReadinessDashboard({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         {/* Main Score Display */}
         <Card className="col-span-1 bg-background-alt border-muted/20 flex flex-col items-center justify-center p-8 text-center">
           <div className="relative w-48 h-48 rounded-full border-[12px] border-foreground/10 flex items-center justify-center mb-4">
@@ -77,6 +83,13 @@ export function ReadinessDashboard({
               <span className="text-xs uppercase tracking-wide text-muted mt-2">out of 100</span>
             </div>
           </div>
+
+          {latestScore && (
+            <div className="mt-2 mb-4">
+              <p className="text-sm font-semibold text-foreground">{getScoreLabel(latestScore.score)}</p>
+              <p className="text-xs text-muted mt-1">Last calculated: {new Date(latestScore.created_at || new Date()).toLocaleString()}</p>
+            </div>
+          )}
           
           {/* Trend Line (Sparkline) */}
           {scores.length > 1 && (

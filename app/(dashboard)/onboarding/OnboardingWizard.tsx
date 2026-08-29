@@ -95,7 +95,7 @@ export function OnboardingWizard() {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <label className="text-xs uppercase tracking-wide text-foreground">Max Amount per Order ($)</label>
+                <label className="text-xs uppercase tracking-wide text-foreground">Max Amount per Order (?)</label>
                 <input
                   type="number"
                   className="w-full mt-1 p-2 border border-muted/20 rounded bg-background"
@@ -104,7 +104,7 @@ export function OnboardingWizard() {
                 />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wide text-foreground">Max Daily Limit ($)</label>
+                <label className="text-xs uppercase tracking-wide text-foreground">Max Daily Limit (?)</label>
                 <input
                   type="number"
                   className="w-full mt-1 p-2 border border-muted/20 rounded bg-background"

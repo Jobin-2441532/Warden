@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-export async function processCatalog(merchantId: string, rawData: any[], sourceType: string) {
+export async function processCatalog(merchantId: string, rawData: any[], rawContentString: string, sourceType: string) {
   const supabase = await createClient();
 
   // Mocking the Structuring Engine (LLM / Rule-based normalization)
@@ -45,6 +45,7 @@ export async function processCatalog(merchantId: string, rawData: any[], sourceT
     merchant_id: merchantId,
     raw_source_type: sourceType,
     structured_json: structuredItems,
+    raw_content: rawContentString,
     last_synced_at: new Date().toISOString()
   };
 

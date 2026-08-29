@@ -97,7 +97,7 @@ export function MandateManager({
             <CardContent className="p-4 flex justify-between items-center">
               <div>
                 <h3 className="font-bold">{m.name}</h3>
-                <p className="text-xs text-muted">Per Order: ${m.max_amount_per_order}</p>
+                <p className="text-xs text-muted">Per Order: {formatINR(m.max_amount_per_order)}</p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 {m.is_active ? <Badge variant="approved">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}
@@ -142,7 +142,7 @@ export function MandateManager({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs uppercase tracking-wide text-foreground">Max Amount / Order ($)</label>
+                    <label className="text-xs uppercase tracking-wide text-foreground">Max Amount / Order (₹)</label>
                     <input
                       type="number"
                       required
@@ -153,7 +153,7 @@ export function MandateManager({
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-wide text-foreground">Max Daily Amount ($)</label>
+                    <label className="text-xs uppercase tracking-wide text-foreground">Max Daily Amount (₹)</label>
                     <input
                       type="number"
                       required
