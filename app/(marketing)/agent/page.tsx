@@ -126,13 +126,13 @@ function AgentChatContent() {
         <CardFooter className="p-4 border-t border-muted/10 bg-background">
           <form onSubmit={handleSubmit} className="flex w-full gap-2">
             <input
-              value={input}
+              value={input || ''}
               onChange={handleInputChange}
               placeholder="Ask for a product..."
               className="flex-1 p-3 rounded-full bg-background-alt border border-muted/20 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-foreground"
               disabled={isLoading}
             />
-            <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !input.trim()}>
+            <Button type="submit" size="icon" className="rounded-full w-12 h-12" disabled={isLoading || !input?.trim()}>
               -{">"}
             </Button>
           </form>
