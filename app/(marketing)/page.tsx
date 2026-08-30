@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import { ScrollyCanvas } from "@/components/ScrollyCanvas";
 import { ArrowRight, CheckCircle2, ShieldAlert, Database, Cpu, Activity, ShieldCheck } from "lucide-react";
 
 export default function Home() {
@@ -21,30 +23,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      
-      {/* 1. HERO SECTION */}
-      <section className="relative pt-32 pb-20 px-6 lg:pt-48 lg:pb-32 max-w-7xl mx-auto flex flex-col items-center text-center">
-        <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="max-w-4xl z-10">
-          <h1 className="text-5xl md:text-7xl font-serif leading-tight tracking-tight mb-8">
-            Make your store sellable to <span className="italic opacity-90">AI buyers.</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-12">
-            Warden transforms your messy product data into machine-readable catalogs, gates autonomous spending, and logs every AI transaction in an immutable audit trail.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="h-14 px-8 text-sm bg-accent text-foreground hover:bg-accent/90">
-              <Link href="/onboarding">Get your readiness score</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="h-14 px-8 text-sm">
-              <Link href="/agent">See the Agent live</Link>
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* Abstract graphic echoing motion blur */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-accent/20 to-foreground/5 blur-3xl rounded-full opacity-50 -z-10 pointer-events-none" />
-      </section>
+    <SmoothScroll>
+      <div className="min-h-screen bg-background text-foreground">
+        
+        {/* 1. SCRUBBING HERO SECTION */}
+        <ScrollyCanvas />
 
       {/* 2. PROBLEM / WHY NOW */}
       <section className="py-24 bg-background-alt border-y border-muted/10">
@@ -216,5 +199,6 @@ export default function Home() {
       </section>
 
     </div>
+    </SmoothScroll>
   );
 }
