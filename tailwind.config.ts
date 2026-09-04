@@ -18,7 +18,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],
-        serif: ["var(--font-fraunces)", "serif"],
+        serif: ["var(--font-heading)", "sans-serif"],
       }
     },
   },

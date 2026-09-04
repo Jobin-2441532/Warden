@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useScroll, useTransform, motion } from "framer-motion";
+import { Button } from "@/components/ui/Button";
+import { ArrowRight } from "lucide-react";
 
 const TOTAL_FRAMES = 239;
 const LERP_FACTOR = 0.04;
 
-// To avoid excessive re-renders, text blocks just use useTransform internally
-// We define standard fade thresholds for text
 export function ScrollyCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -19,17 +19,13 @@ export function ScrollyCanvas() {
   const [loadedCount, setLoadedCount] = useState(0);
   const [isReady, setIsReady] = useState(false);
   
-  // Track images in a ref so they don't trigger re-renders
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
   
-  // We need current progress separate from target progress for LERP
-  // Framer motion's useScroll gives us target
   const { scrollYProgress: targetProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
 
-  // Track state for the animation loop
   const stateRef = useRef({
     currentProgress: 0,
     targetProgress: 0,
@@ -38,7 +34,6 @@ export function ScrollyCanvas() {
     isActive: false
   });
 
-  // Check prefers-reduced-motion & mobile on mount
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setIsReducedMotion(mediaQuery.matches);
@@ -49,340 +44,296 @@ export function ScrollyCanvas() {
     setIsMobile(mobileQuery.matches);
     const mobileListener = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mobileQuery.addEventListener("change", mobileListener);
-    
+
     return () => {
       mediaQuery.removeEventListener("change", listener);
       mobileQuery.removeEventListener("change", mobileListener);
     };
   }, []);
 
-  // Preload logic
   useEffect(() => {
-    if (isReducedMotion) {
-      setIsReady(true); // Don't block
-      return;
-    }
-
-    const INITIAL_BATCH = isMobile ? 30 : 60;
+    let unmounted = false;
+    let loaded = 0;
     
-    // Load a single frame
-    const loadFrame = (index: number): Promise<void> => {
-      return new Promise((resolve) => {
-        if (imagesRef.current[index]) return resolve(); // Already loaded
-        
-        const img = new Image();
-        // 1-indexed, zero-padded
-        const num = String(index + 1).padStart(6, '0');
-        img.src = `/sequence/frame_${num}.webp`;
-        img.onload = () => {
-          imagesRef.current[index] = img;
-          setLoadedCount(prev => prev + 1);
-          resolve();
-        };
-        img.onerror = () => {
-          // If a frame fails, just resolve so we don't block forever
-          resolve();
-        };
-      });
-    };
-
-    // Load first batch
-    const loadInitialBatch = async () => {
-      const promises = [];
-      for (let i = 0; i < INITIAL_BATCH; i++) {
-        promises.push(loadFrame(i));
-      }
-      await Promise.all(promises);
-      setIsReady(true);
+    const step = isMobile ? 2 : 1;
+    const requiredFrames = Math.ceil(TOTAL_FRAMES / step);
+    
+    for (let i = 0; i < TOTAL_FRAMES; i += step) {
+      const img = new Image();
+      const frameNum = (i + 1).toString().padStart(6, '0');
+      img.src = \/sequence/frame_\.webp\;
       
-      // Then load rest in batches of 20
-      const loadRemaining = async () => {
-        for (let i = INITIAL_BATCH; i < TOTAL_FRAMES; i += 20) {
-          const batch = [];
-          for (let j = i; j < Math.min(i + 20, TOTAL_FRAMES); j++) {
-            batch.push(loadFrame(j));
-          }
-          await Promise.all(batch);
+      img.onload = () => {
+        if (unmounted) return;
+        imagesRef.current[i] = img;
+        loaded++;
+        setLoadedCount(loaded);
+        
+        if (loaded >= requiredFrames) {
+          setIsReady(true);
         }
       };
       
-      loadRemaining();
-    };
+      img.onerror = () => {
+        if (unmounted) return;
+        loaded++;
+        setLoadedCount(loaded);
+        if (loaded >= requiredFrames) setIsReady(true);
+      };
+    }
     
-    loadInitialBatch();
-  }, [isReducedMotion, isMobile]);
+    return () => { unmounted = true; };
+  }, [isMobile]);
 
-  // Framer-motion scroll subscription to trigger RAF
   useEffect(() => {
-    if (isReducedMotion) return;
+    if (!isReady) return;
     
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      stateRef.current.lastDrawnIndex = -1;
+    };
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const drawFrame = (index: number) => {
+      if (!ctx || !canvas) return;
+      
+      let imgIndex = index;
+      if (imagesRef.current[imgIndex] === null) {
+        let found = false;
+        for (let i = index - 1; i >= 0; i--) {
+          if (imagesRef.current[i] !== null) {
+            imgIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) return;
+      }
+
+      const img = imagesRef.current[imgIndex];
+      if (!img) return;
+
+      const scale = Math.max(
+        canvas.width / img.width,
+        canvas.height / img.height
+      );
+      
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const x = (canvas.width - drawW) / 2;
+      const y = (canvas.height - drawH) / 2;
+      
+      ctx.fillStyle = "#EAEAE8";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, x, y, drawW, drawH);
+    };
+
     const unsubscribe = targetProgress.on("change", (latest) => {
       stateRef.current.targetProgress = latest;
-      
       if (!stateRef.current.isActive) {
         stateRef.current.isActive = true;
         stateRef.current.rafId = requestAnimationFrame(renderLoop);
       }
     });
-    
-    return () => unsubscribe();
-  }, [targetProgress, isReducedMotion]);
 
-  // The actual render loop
-  const renderLoop = () => {
-    const state = stateRef.current;
+    const renderLoop = () => {
+      const state = stateRef.current;
+      
+      state.currentProgress += (state.targetProgress - state.currentProgress) * LERP_FACTOR;
+      
+      if (Math.abs(state.targetProgress - state.currentProgress) < 0.0001) {
+        state.currentProgress = state.targetProgress;
+        state.isActive = false;
+      }
+      
+      const frameIndex = Math.min(
+        TOTAL_FRAMES - 1,
+        Math.max(0, Math.floor(state.currentProgress * (TOTAL_FRAMES - 1)))
+      );
+      
+      if (frameIndex !== state.lastDrawnIndex) {
+        drawFrame(frameIndex);
+        state.lastDrawnIndex = frameIndex;
+      }
+      
+      if (state.isActive) {
+        state.rafId = requestAnimationFrame(renderLoop);
+      }
+    };
     
-    // LERP
-    state.currentProgress += (state.targetProgress - state.currentProgress) * LERP_FACTOR;
-    
-    // Check if we converged
-    if (Math.abs(state.targetProgress - state.currentProgress) < 0.0001) {
-      state.currentProgress = state.targetProgress;
-      state.isActive = false; // Stop RAF
-    } else {
-      state.rafId = requestAnimationFrame(renderLoop);
-    }
-    
-    drawFrame(state.currentProgress);
-  };
+    stateRef.current.isActive = true;
+    stateRef.current.rafId = requestAnimationFrame(renderLoop);
 
-  // Draw logic
-  const drawFrame = (progress: number) => {
-    if (!canvasRef.current) return;
-    
-    // Math.min(238, floor(progress * 239))
-    let frameIndex = Math.min(TOTAL_FRAMES - 1, Math.floor(progress * TOTAL_FRAMES));
-    
-    // Fallback if not loaded
-    while (frameIndex >= 0 && !imagesRef.current[frameIndex]) {
-      frameIndex--;
-    }
-    
-    if (frameIndex < 0) return; // Nothing loaded at all
-    
-    // Redraw guard
-    if (frameIndex === stateRef.current.lastDrawnIndex) return;
-    stateRef.current.lastDrawnIndex = frameIndex;
-    
-    const ctx = canvasRef.current.getContext("2d", { alpha: false });
-    if (!ctx) return;
-    
-    const img = imagesRef.current[frameIndex];
-    if (!img) return;
-    
-    const canvas = canvasRef.current;
-    
-    // Ensure canvas dimensions match CSS pixels for crisp rendering
-    const rect = canvas.getBoundingClientRect();
-    if (canvas.width !== rect.width || canvas.height !== rect.height) {
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    }
-    
-    // Object-fit: cover logic
-    const canvasRatio = canvas.width / canvas.height;
-    const imgRatio = img.width / img.height;
-    
-    let drawWidth = canvas.width;
-    let drawHeight = canvas.height;
-    let offsetX = 0;
-    let offsetY = 0;
-    
-    if (canvasRatio > imgRatio) {
-      // Canvas is wider than image
-      drawHeight = canvas.width / imgRatio;
-      offsetY = (canvas.height - drawHeight) / 2;
-    } else {
-      // Canvas is taller than image
-      drawWidth = canvas.height * imgRatio;
-      offsetX = (canvas.width - drawWidth) / 2;
-    }
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-  };
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      unsubscribe();
+      cancelAnimationFrame(stateRef.current.rafId);
+    };
+  }, [isReady, targetProgress]);
 
-  // Initial draw once ready
-  useEffect(() => {
-    if (isReady && canvasRef.current && !isReducedMotion) {
-      drawFrame(stateRef.current.currentProgress);
-    }
-  }, [isReady, isReducedMotion]);
-
-  // Reduced motion fallback
   if (isReducedMotion) {
     return (
-      <div className="relative min-h-screen bg-[#D7E2EA] text-[#17242F] overflow-hidden">
-        {/* Static Background */}
-        <div 
-          className="absolute inset-0 z-0 opacity-40 bg-cover bg-center"
-          style={{ backgroundImage: `url('/sequence/frame_000239.webp')` }}
-        />
-        
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20 text-center gap-12 max-w-4xl mx-auto">
-          <h1 className="font-serif text-5xl md:text-7xl">
-            An AI agent wants to buy something.
-          </h1>
-          
-          <div className="space-y-4">
-            <h2 className="font-serif text-3xl md:text-5xl">It moves fast. It has no judgement.</h2>
-            <p className="text-muted text-lg">But every purchase hits <span className="font-bold text-[#C9E44C] px-1 bg-[#17242F] rounded">the gate</span>.</p>
-          </div>
-          
-          <div className="flex flex-wrap justify-center gap-4 text-xl">
-            <span className="px-4 py-2 bg-white/50 backdrop-blur rounded-full">Amount</span>
-            <span className="px-4 py-2 bg-white/50 backdrop-blur rounded-full">Category</span>
-            <span className="px-4 py-2 bg-white/50 backdrop-blur rounded-full">Daily limit</span>
-            <span className="px-4 py-2 bg-white/50 backdrop-blur rounded-full">Velocity</span>
-          </div>
-          
-          <h2 className="font-serif text-4xl md:text-6xl">
-            Approved. <span className="text-[#C9E44C] bg-[#17242F] px-2 rounded">Explained.</span> Logged.
-          </h2>
-          
-          <div className="pt-12">
-            <h2 className="font-serif text-4xl md:text-6xl mb-8">
-              Every AI purchase, explained, bounded, and logged.
-            </h2>
-            <Link href="/onboarding" className="inline-block px-8 py-4 bg-[#C9E44C] text-[#17242F] font-bold rounded-full hover:scale-105 active:scale-95 transition-all">
-              Get your readiness score
-            </Link>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-center p-8">
+        <div className="max-w-2xl">
+          <h1 className="font-heading font-bold text-5xl md:text-7xl mb-6">Warden</h1>
+          <p className="text-xl text-muted mb-8">Make your store sellable to AI buyers.</p>
+          <Link href="/onboarding">
+            <Button className="rounded-full">Get your readiness score</Button>
+          </Link>
         </div>
       </div>
     );
   }
 
-  // Fade helper for standard opacity curve (fade in over 15% of its range, out over 15%)
-  // Opacity blocks don't need createOpacityRange anymore because we use a function inside OpacityBlock.
-  // We just pass start and end as props.
   return (
     <div 
       ref={containerRef} 
       className="relative w-full"
       style={{ height: isMobile ? "500vh" : "1000vh" }}
     >
-      {/* Loading Screen Overlay */}
       {!isReady && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#D7E2EA] text-[#17242F]">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
           <div className="w-64 max-w-[80%]">
-            <div className="flex justify-between mb-2 font-sans text-sm">
-              <span>Loading Sequence...</span>
+            <div className="flex justify-between mb-2 font-sans text-xs uppercase tracking-widest font-bold">
+              <span>Loading sequence</span>
               <span>{Math.min(100, Math.round((loadedCount / (isMobile ? 30 : 60)) * 100))}%</span>
             </div>
-            <div className="h-1 bg-[#17242F]/10 rounded-full overflow-hidden">
+            <div className="h-1 bg-black/10 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#C9E44C] transition-all duration-300 ease-out"
-                style={{ width: `${Math.min(100, Math.round((loadedCount / (isMobile ? 30 : 60)) * 100))}%` }}
+                className="h-full bg-black transition-all duration-300 ease-out"
+                style={{ width: \\%\ }}
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Sticky Container for Canvas & Overlays */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#D7E2EA]">
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-background">
         
-        {/* The Canvas */}
+        {/* Giant Background Text on top of canvas */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 overflow-hidden mix-blend-overlay">
+          <h1 className="text-[28vw] font-heading font-bold text-black/10 tracking-tighter whitespace-nowrap select-none">
+            warden.
+          </h1>
+        </div>
+        
         <canvas 
           ref={canvasRef} 
           className="absolute inset-0 w-full h-full object-cover z-0"
           aria-hidden="true"
         />
+
+        {/* TOP HEADER (Always Visible) */}
+        <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-8 pointer-events-none">
+          <div className="font-heading font-extrabold text-3xl tracking-tighter text-foreground pointer-events-auto">
+            warden.
+          </div>
+          <nav className="hidden md:flex items-center gap-12 pointer-events-auto">
+            <Link href="#how-it-works" className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground hover:opacity-70 transition-opacity">How it works</Link>
+            <Link href="#science" className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground hover:opacity-70 transition-opacity">Infrastructure</Link>
+            <Link href="#library" className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground hover:opacity-70 transition-opacity">Docs</Link>
+          </nav>
+          <div className="pointer-events-auto hidden md:block">
+            <Button variant="outline" className="rounded-full">Get Started</Button>
+          </div>
+        </header>
         
-        {/* Overlays Container */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4 pointer-events-none">
-          
-          {/* Block 1 */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0} end={0.12}
-            className="absolute max-w-2xl"
-          >
-            <h2 className="font-serif text-5xl md:text-7xl text-white drop-shadow-lg">
-              An AI agent wants to buy something.
-            </h2>
-          </OpacityBlock>
+        {/* OVERLAYS CONTAINER */}
+        <div className="absolute inset-0 z-30 pointer-events-none p-6 md:p-12 pb-12 flex flex-col justify-end">
+          <div className="flex flex-col md:flex-row justify-between items-end w-full h-full relative">
+            
+            {/* Left side text overlays (Absolute inside relative to overlap properly) */}
+            <div className="relative w-full md:w-1/2 max-w-xl h-64 md:h-80 pointer-events-none flex flex-col justify-end">
+              
+              <OpacityBlock progress={targetProgress} start={0} end={0.15} className="absolute bottom-0 left-0 w-full">
+                <div className="pointer-events-auto mb-6">
+                  <Link href="#how-it-works">
+                    <Button className="rounded-full bg-black text-white hover:bg-black/80 font-bold px-8">See how it works</Button>
+                  </Link>
+                </div>
+                <h2 className="font-heading font-bold text-5xl md:text-7xl text-foreground tracking-tight mb-4 leading-[1.05]">
+                  Make your store sellable to AI buyers
+                </h2>
+                <p className="text-muted text-lg max-w-md">
+                  Warden uses AI to diagnose your infrastructure from a single scan — and builds an API layer that fits your exact stack.
+                </p>
+              </OpacityBlock>
 
-          {/* Block 2 */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0.12} end={0.30}
-            className="absolute max-w-2xl"
-          >
-            <h2 className="font-serif text-4xl md:text-6xl text-white drop-shadow-lg mb-2">
-              It moves fast.
-            </h2>
-            <h2 className="font-serif text-4xl md:text-6xl text-white drop-shadow-lg">
-              It has no judgement.
-            </h2>
-          </OpacityBlock>
+              <OpacityBlock progress={targetProgress} start={0.15} end={0.35} className="absolute bottom-0 left-0 w-full">
+                <h2 className="font-heading font-bold text-5xl md:text-7xl text-foreground tracking-tight mb-4 leading-[1.05]">
+                  They move fast.<br/>They have no judgement.
+                </h2>
+                <p className="text-muted text-lg max-w-md">
+                  Agentic buyers execute millions of transactions in milliseconds. They bypass your beautiful UI completely.
+                </p>
+              </OpacityBlock>
 
-          {/* Block 3 */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0.30} end={0.45}
-            className="absolute max-w-2xl"
-          >
-            <h2 className="font-serif text-5xl md:text-7xl text-white drop-shadow-lg">
-              Every purchase hits <span className="text-[#C9E44C] bg-[#17242F] px-2 rounded inline-block mt-2">the gate</span>.
-            </h2>
-          </OpacityBlock>
+              <OpacityBlock progress={targetProgress} start={0.35} end={0.55} className="absolute bottom-0 left-0 w-full">
+                <h2 className="font-heading font-bold text-5xl md:text-7xl text-foreground tracking-tight mb-4 leading-[1.05]">
+                  Every purchase hits the gate.
+                </h2>
+                <p className="text-muted text-lg max-w-md">
+                  Block unsafe velocity. Limit categories. Reject bad payloads. Instantly.
+                </p>
+              </OpacityBlock>
 
-          {/* Block 4 (Checklist) */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0.45} end={0.62}
-            className="absolute max-w-2xl"
-          >
-            <div className="flex flex-col gap-4 font-sans text-3xl md:text-5xl font-bold text-white drop-shadow-lg">
-              <ChecklistWord progress={targetProgress} start={0.45} end={0.62} idx={0}>Amount.</ChecklistWord>
-              <ChecklistWord progress={targetProgress} start={0.45} end={0.62} idx={1}>Category.</ChecklistWord>
-              <ChecklistWord progress={targetProgress} start={0.45} end={0.62} idx={2}>Daily limit.</ChecklistWord>
-              <ChecklistWord progress={targetProgress} start={0.45} end={0.62} idx={3}>Velocity.</ChecklistWord>
+              <OpacityBlock progress={targetProgress} start={0.55} end={0.75} className="absolute bottom-0 left-0 w-full">
+                <h2 className="font-heading font-bold text-5xl md:text-7xl text-foreground tracking-tight mb-4 leading-[1.05]">
+                  Approved. Explained. Logged.
+                </h2>
+                <p className="text-muted text-lg max-w-md">
+                  Nothing moves without a reason. Audit trails built directly into the execution layer.
+                </p>
+              </OpacityBlock>
+
+              <OpacityBlock progress={targetProgress} start={0.75} end={1.0} className="absolute bottom-0 left-0 w-full">
+                <h2 className="font-heading font-bold text-5xl md:text-7xl text-foreground tracking-tight mb-4 leading-[1.05]">
+                  Ready for the autonomous web.
+                </h2>
+                <p className="text-muted text-lg max-w-md mb-8">
+                  Future-proof your revenue streams before the market shifts entirely to agent-led procurement.
+                </p>
+                <div className="pointer-events-auto">
+                  <Link href="/onboarding">
+                    <Button size="lg" className="rounded-full bg-black text-white hover:bg-black/80 font-bold px-10">Get your readiness score</Button>
+                  </Link>
+                </div>
+              </OpacityBlock>
+
             </div>
-          </OpacityBlock>
 
-          {/* Block 5 */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0.62} end={0.78}
-            className="absolute max-w-2xl"
-          >
-            <h2 className="font-serif text-5xl md:text-7xl text-white drop-shadow-lg leading-tight">
-              Approved.<br/>
-              <span className="text-[#C9E44C] bg-[#17242F] px-2 rounded mx-2">Explained.</span><br/>
-              Logged.
-            </h2>
-          </OpacityBlock>
-
-          {/* Block 6 */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0.78} end={0.92}
-            className="absolute max-w-2xl"
-          >
-            <h2 className="font-serif text-4xl md:text-6xl text-white drop-shadow-lg">
-              Nothing moves without a reason.
-            </h2>
-          </OpacityBlock>
-
-          {/* Block 7 (Closing) */}
-          <OpacityBlock 
-            progress={targetProgress} 
-            start={0.92} end={1.0}
-            className="absolute max-w-4xl"
-          >
-            <h2 className="font-serif text-5xl md:text-7xl text-white drop-shadow-lg mb-8">
-              Every AI purchase, explained, bounded, and logged.
-            </h2>
-            <div className="pointer-events-auto">
-              <Link href="/onboarding" className="inline-block px-8 py-4 bg-[#C9E44C] text-[#17242F] font-bold text-xl rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg">
-                Get your readiness score
-              </Link>
+            {/* Right side static cards */}
+            <div className="hidden md:flex gap-6 pointer-events-auto h-64 md:h-80 items-end">
+              <div className="bg-white rounded-[2rem] p-8 w-[17rem] shadow-sm flex flex-col justify-between aspect-square">
+                <div className="font-heading font-bold text-6xl tracking-tight text-foreground">92%</div>
+                <div className="flex justify-between items-end mt-4 gap-4">
+                  <div className="text-[10px] leading-relaxed text-muted font-bold uppercase tracking-widest w-full">of autonomous checkouts succeed on first try</div>
+                  <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/80 transition-colors">
+                    <ArrowRight className="w-5 h-5 -rotate-45" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-[2rem] p-8 w-[17rem] shadow-sm flex flex-col justify-between aspect-square">
+                <div className="font-heading font-bold text-6xl tracking-tight text-foreground flex items-baseline">100<span className="text-3xl ml-1">ms</span></div>
+                <div className="flex justify-between items-end mt-4 gap-4">
+                  <div className="text-[10px] leading-relaxed text-muted font-bold uppercase tracking-widest w-full">average api transaction velocity for ai agents</div>
+                  <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/80 transition-colors">
+                    <ArrowRight className="w-5 h-5 -rotate-45" />
+                  </div>
+                </div>
+              </div>
             </div>
-          </OpacityBlock>
 
+          </div>
         </div>
       </div>
     </div>
@@ -397,50 +348,16 @@ function OpacityBlock({ progress, start, end, children, className }: any) {
     if (v < start) return 0;
     if (v > end) return 0;
     
-    if (v < start + fade) {
-      // fading in
-      return (v - start) / fade;
-    }
-    if (v > end - fade) {
-      // fading out
-      return (end - v) / fade;
-    }
+    if (v < start + fade) return (v - start) / fade;
+    if (v > end - fade) return (end - v) / fade;
     
     return 1;
   });
 
-  return (
-    <motion.div style={{ opacity }} className={className}>
-      {children}
-    </motion.div>
-  );
-}
+  const zIndex = useTransform(opacity, (v) => (v > 0 ? 10 : 0));
 
-function ChecklistWord({ progress, start, end, idx, children }: any) {
-  const opacity = useTransform(progress, (v: number) => {
-    const step = (end - start) / 4;
-    const wordStart = start + step * idx;
-    const peak = wordStart + step * 0.5;
-    const fall = end - 0.02;
-    
-    if (v < wordStart) return 0;
-    if (v > end) return 0;
-    
-    if (v < peak) {
-      // fade in
-      return (v - wordStart) / (peak - wordStart);
-    }
-    
-    if (v > fall) {
-      // fade out
-      return (end - v) / (end - fall);
-    }
-    
-    return 1;
-  });
-  
   return (
-    <motion.div style={{ opacity }}>
+    <motion.div style={{ opacity, zIndex }} className={className}>
       {children}
     </motion.div>
   );
